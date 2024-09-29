@@ -4,6 +4,8 @@ import cors from 'cors';
 
 import { env } from './utils/env.js';
 
+import { getContacts, findContactById } from './controllers/contacts.js';
+
 const PORT = Number(env('PORT', '3000'));
 
 export const setupServer = () => {
@@ -20,14 +22,20 @@ export const setupServer = () => {
     }),
   );
 
+  app.get('/contacts', getContacts);
+
+  app.get('/contacts/:contactId', findContactById);
+
   app.use('*', (req, res, next) => {
     res.status(404).json({
+      status: 404,
       message: 'Not found',
     });
   });
 
   app.use((err, req, res, next) => {
     res.status(500).json({
+      status: 500,
       message: 'Internal server error',
       error: err.message,
     });
@@ -37,5 +45,3 @@ export const setupServer = () => {
     console.log(`Server is running on port ${PORT}`);
   });
 };
-
-
