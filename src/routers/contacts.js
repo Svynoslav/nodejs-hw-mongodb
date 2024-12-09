@@ -13,10 +13,10 @@ import {
 const router = express.Router();
 const jsonParser = express.json();
 
-router.get('/contacts', ctrlWrapper(getContactsCtrl));
-router.get('/contacts/:id', ctrlWrapper(getContactByIdCtrl));
+router.get('/', ctrlWrapper(getContactsCtrl));
+router.get('/:id', ctrlWrapper(getContactByIdCtrl));
 
-router.post('/contacts', jsonParser, ctrlWrapper(createContactCtrl));
+router.post('/', jsonParser, ctrlWrapper(createContactCtrl));
 
 router.delete('/:id', ctrlWrapper(deleteContactCtrl));
 
