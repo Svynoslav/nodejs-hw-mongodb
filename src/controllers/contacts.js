@@ -35,11 +35,25 @@ export const getContactByIdCtrl = async (req, res) => {
 };
 
 export const createContactCtrl = async (req, res) => {
-  const contact = await createContact(req.body);
+  const { name, phoneNumber, email, isFavourite, contactType } = req.body;
 
-  res
-    .status(201)
-    .send({ status: 201, message: 'Contact created', data: contact });
+  if (!name || !phoneNumber || !contactType) {
+    throw new createHttpError.BadRequest('Missing required fields');
+  }
+
+  const contact = await createContact({
+    name,
+    phoneNumber,
+    email,
+    isFavourite,
+    contactType,
+  });
+
+  res.status(201).send({
+    status: 201,
+    message: 'Successfully created a contact!',
+    data: contact,
+  });
 };
 
 export const deleteContactCtrl = async (req, res) => {
@@ -56,13 +70,18 @@ export const deleteContactCtrl = async (req, res) => {
 
 export const replaceContactCtrl = async (req, res) => {
   const { id } = req.params;
+  const { name, phoneNumber, email, isFavourite, contactType } = req.body;
+
+  if (!name || !phoneNumber || !contactType) {
+    throw new createHttpError.BadRequest('Missing required fields');
+  }
 
   const contact = {
-    name: req.body.name,
-    phoneNumber: req.body.phoneNumber,
-    email: req.body.email,
-    isFavourite: req.body.isFavourite,
-    contactType: req.body.contactType,
+    name,
+    phoneNumber,
+    email,
+    isFavourite,
+    contactType,
   };
 
   const result = await replaceContact(id, contact);
@@ -78,19 +97,19 @@ export const replaceContactCtrl = async (req, res) => {
 
 export const updateContactCtrl = async (req, res) => {
   const { id } = req.params;
-  const contact = {
-    name: req.body.name,
-    phoneNumber: req.body.phoneNumber,
-    email: req.body.email,
-    isFavourite: req.body.isFavourite,
-    contactType: req.body.contactType,
-  };
+  const updatedFields = Object.fromEntries(
+    Object.entries(req.body).filter(([_, value]) => value !== undefined),
+  );
 
-  const result = await updateContact(id, contact);
+  const result = await updateContact(id, updatedFields);
 
   if (!result) {
     throw new createHttpError.NotFound('Contact not found');
   }
 
-  res.send({ status: 200, message: 'Contact updated', data: result });
+  res.send({
+    status: 200,
+    message: 'Successfully patched a contact!',
+    data: result,
+  });
 };
