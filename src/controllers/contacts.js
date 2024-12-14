@@ -7,11 +7,24 @@ import {
   updateContact,
 } from '../services/contacts.js';
 
+import { parsePaginationParams } from '../utils/parsePaginationParams.js';
+import { parseSortParams } from '../utils/parseSortParams.js';
+import { parseFilterParams } from '../utils/parseFilterParams.js';
+
 import createHttpError from 'http-errors';
-import mongoose from 'mongoose';
 
 export const getContactsCtrl = async (req, res) => {
-  const contacts = await getContacts();
+  const { page, perPage } = parsePaginationParams(req.query);
+  const { sortBy, sortOrder } = parseSortParams(req.query);
+  const filter = parseFilterParams(req.query);
+
+  const contacts = await getContacts({
+    page,
+    perPage,
+    sortBy,
+    sortOrder,
+    filter,
+  });
 
   res.status(200).json({
     status: 200,
@@ -22,9 +35,6 @@ export const getContactsCtrl = async (req, res) => {
 
 export const getContactByIdCtrl = async (req, res) => {
   const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new createHttpError.BadRequest('Invalid ID format');
-  }
 
   const contact = await getContactById(id);
   if (!contact) {
@@ -40,9 +50,6 @@ export const getContactByIdCtrl = async (req, res) => {
 
 export const createContactCtrl = async (req, res) => {
   const { name, phoneNumber, email, isFavourite, contactType } = req.body;
-  if (!name || !phoneNumber || !contactType) {
-    throw new createHttpError.BadRequest('Missing required fields');
-  }
 
   const contact = await createContact({
     name,
@@ -61,9 +68,6 @@ export const createContactCtrl = async (req, res) => {
 
 export const deleteContactCtrl = async (req, res) => {
   const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new createHttpError.BadRequest('Invalid ID format');
-  }
 
   const contact = await deleteContact(id);
   if (!contact) {
@@ -75,14 +79,7 @@ export const deleteContactCtrl = async (req, res) => {
 
 export const replaceContactCtrl = async (req, res) => {
   const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new createHttpError.BadRequest('Invalid ID format');
-  }
-
   const { name, phoneNumber, email, isFavourite, contactType } = req.body;
-  if (!name || !phoneNumber || !contactType) {
-    throw new createHttpError.BadRequest('Missing required fields');
-  }
 
   const contact = {
     name,
@@ -104,15 +101,9 @@ export const replaceContactCtrl = async (req, res) => {
 
 export const updateContactCtrl = async (req, res) => {
   const { id } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new createHttpError.BadRequest('Invalid ID format');
-  }
+  const contact = req.body;
 
-  const updatedFields = Object.fromEntries(
-    Object.entries(req.body).filter(([_, value]) => value !== undefined),
-  );
-
-  const result = await updateContact(id, updatedFields);
+  const result = await updateContact(id, contact);
   if (!result) {
     throw new createHttpError.NotFound('Contact not found');
   }
