@@ -24,6 +24,7 @@ export const getContactsCtrl = async (req, res) => {
     sortBy,
     sortOrder,
     filter,
+    userId: req.user._id,
   });
 
   res.status(200).json({
@@ -38,6 +39,10 @@ export const getContactByIdCtrl = async (req, res) => {
 
   const contact = await getContactById(id);
   if (!contact) {
+    throw new createHttpError.NotFound('Contact not found');
+  }
+
+  if (contact.userId.toString() !== req.user._id.toString()) {
     throw new createHttpError.NotFound('Contact not found');
   }
 
@@ -57,6 +62,7 @@ export const createContactCtrl = async (req, res) => {
     email,
     isFavourite,
     contactType,
+    userId: req.user._id,
   });
 
   res.status(201).send({
@@ -71,6 +77,10 @@ export const deleteContactCtrl = async (req, res) => {
 
   const contact = await deleteContact(id);
   if (!contact) {
+    throw new createHttpError.NotFound('Contact not found');
+  }
+
+  if (contact.userId.toString() !== req.user._id.toString()) {
     throw new createHttpError.NotFound('Contact not found');
   }
 
@@ -89,6 +99,14 @@ export const replaceContactCtrl = async (req, res) => {
     contactType,
   };
 
+  const existingContact = await getContactById(id);
+  if (!existingContact) {
+    throw new createHttpError.NotFound('Contact not found');
+  }
+  if (existingContact.userId.toString() !== req.user._id.toString()) {
+    throw new createHttpError.NotFound('Contact not found');
+  }
+
   const result = await replaceContact(id, contact);
   if (!result) {
     throw new createHttpError.NotFound('Contact not found');
@@ -102,6 +120,14 @@ export const replaceContactCtrl = async (req, res) => {
 export const updateContactCtrl = async (req, res) => {
   const { id } = req.params;
   const contact = req.body;
+
+  const existingContact = await getContactById(id);
+  if (!existingContact) {
+    throw new createHttpError.NotFound('Contact not found');
+  }
+  if (existingContact.userId.toString() !== req.user._id.toString()) {
+    throw new createHttpError.NotFound('Contact not found');
+  }
 
   const result = await updateContact(id, contact);
   if (!result) {
