@@ -3,6 +3,7 @@ import express from 'express';
 import { ctrlWrapper } from '../utils/ctrlWrapper.js';
 import { isValidId } from '../middlewares/isValidId.js';
 import { validateBody } from '../middlewares/validateBody.js';
+import { upload } from '../middlewares/multer.js';
 
 import {
   contactPostSchema,
@@ -27,7 +28,9 @@ router.get('/:id', isValidId, ctrlWrapper(getContactByIdCtrl));
 
 router.post(
   '/',
+  isValidId,
   jsonParser,
+  upload.single('photo'),
   validateBody(contactPostSchema),
   ctrlWrapper(createContactCtrl),
 );
@@ -38,6 +41,7 @@ router.put(
   '/:id',
   isValidId,
   jsonParser,
+  upload.single('photo'),
   validateBody(contactPutSchema),
   ctrlWrapper(replaceContactCtrl),
 );
@@ -46,6 +50,7 @@ router.patch(
   '/:id',
   isValidId,
   jsonParser,
+  upload.single('photo'),
   validateBody(contactPatchSchema),
   ctrlWrapper(updateContactCtrl),
 );

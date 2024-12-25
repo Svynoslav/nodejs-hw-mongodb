@@ -1,3 +1,5 @@
+import createHttpError from 'http-errors';
+
 import {
   getContacts,
   getContactById,
@@ -10,8 +12,9 @@ import {
 import { parsePaginationParams } from '../utils/parsePaginationParams.js';
 import { parseSortParams } from '../utils/parseSortParams.js';
 import { parseFilterParams } from '../utils/parseFilterParams.js';
-
-import createHttpError from 'http-errors';
+import { saveFileToUploadDir } from '../utils/saveFileToUploadDir.js';
+import { saveFileToCloudinary } from '../utils/saveFileToCloudinary.js';
+import { env } from '../utils/env.js';
 
 export const getContactsCtrl = async (req, res) => {
   const { page, perPage } = parsePaginationParams(req.query);
@@ -55,6 +58,16 @@ export const getContactByIdCtrl = async (req, res) => {
 
 export const createContactCtrl = async (req, res) => {
   const { name, phoneNumber, email, isFavourite, contactType } = req.body;
+  const photo = req.file;
+
+  let photoUrl;
+  if (photo) {
+    if (env('ENABLE_CLOUDINARY') === 'true') {
+      photoUrl = await saveFileToCloudinary(photo);
+    } else {
+      photoUrl = await saveFileToUploadDir(photo);
+    }
+  }
 
   const contact = await createContact({
     name,
@@ -63,6 +76,7 @@ export const createContactCtrl = async (req, res) => {
     isFavourite,
     contactType,
     userId: req.user._id,
+    photo: photoUrl,
   });
 
   res.status(201).send({
@@ -89,15 +103,10 @@ export const deleteContactCtrl = async (req, res) => {
 
 export const replaceContactCtrl = async (req, res) => {
   const { id } = req.params;
-  const { name, phoneNumber, email, isFavourite, contactType } = req.body;
-
-  const contact = {
-    name,
-    phoneNumber,
-    email,
-    isFavourite,
-    contactType,
-  };
+  const { name, phoneNumber, email, isFavourite, contactType, userId } =
+    req.body;
+  const photo = req.file;
+  let photoUrl;
 
   const existingContact = await getContactById(id);
   if (!existingContact) {
@@ -106,6 +115,24 @@ export const replaceContactCtrl = async (req, res) => {
   if (existingContact.userId.toString() !== req.user._id.toString()) {
     throw new createHttpError.NotFound('Contact not found');
   }
+
+  if (photo) {
+    if (env('ENABLE_CLOUDINARY') === 'true') {
+      photoUrl = await saveFileToCloudinary(photo);
+    } else {
+      photoUrl = await saveFileToUploadDir(photo);
+    }
+  }
+
+  const contact = {
+    name,
+    phoneNumber,
+    email,
+    isFavourite,
+    contactType,
+    userId,
+    photo: photoUrl,
+  };
 
   const result = await replaceContact(id, contact);
   if (!result) {
@@ -119,7 +146,8 @@ export const replaceContactCtrl = async (req, res) => {
 
 export const updateContactCtrl = async (req, res) => {
   const { id } = req.params;
-  const contact = req.body;
+  const photo = req.file;
+  let photoUrl;
 
   const existingContact = await getContactById(id);
   if (!existingContact) {
@@ -129,7 +157,18 @@ export const updateContactCtrl = async (req, res) => {
     throw new createHttpError.NotFound('Contact not found');
   }
 
-  const result = await updateContact(id, contact);
+  if (photo) {
+    if (env('ENABLE_CLOUDINARY') === 'true') {
+      photoUrl = await saveFileToCloudinary(photo);
+    } else {
+      photoUrl = await saveFileToUploadDir(photo);
+    }
+  }
+
+  const result = await updateContact(id, {
+    ...req.body,
+    photo: photoUrl,
+  });
   if (!result) {
     throw new createHttpError.NotFound('Contact not found');
   }
