@@ -128,3 +128,12 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+/src/tmp/*
+!/src/tmp/.gitkeep
+
+/src/public/*
+!/src/public/.gitkeep
+
+/src/public/photos/*
+!/src/public/photos/.gitkeep

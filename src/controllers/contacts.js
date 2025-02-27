@@ -1,3 +1,6 @@
+import * as fs from 'node:fs/promises';
+import path from 'node:path';
+
 import {
   getContacts,
   getContactById,
@@ -10,6 +13,8 @@ import {
 import { parsePaginationParams } from '../utils/parsePaginationParams.js';
 import { parseSortParams } from '../utils/parseSortParams.js';
 import { parseFilterParams } from '../utils/parseFilterParams.js';
+import { uploadToCloudinary } from '../utils/uploadToCloudinary.js';
+import { env } from '../utils/env.js';
 
 import createHttpError from 'http-errors';
 
@@ -54,6 +59,24 @@ export const getContactByIdCtrl = async (req, res) => {
 };
 
 export const createContactCtrl = async (req, res) => {
+  let photo = null;
+
+  if (typeof req.file !== 'undefined') {
+    if (env('ENABLE_CLOUDINARY') === 'true') {
+      const result = await uploadToCloudinary(req.file.path);
+      await fs.unlink(req.file.path);
+
+      photo = result.secure_url;
+    } else {
+      await fs.rename(
+        req.file.path,
+        path.resolve('src', 'public', 'photos', req.file.filename),
+      );
+
+      photo = `http://localhost:3000/photo/${req.file.filename}`;
+    }
+  }
+
   const { name, phoneNumber, email, isFavourite, contactType } = req.body;
 
   const contact = await createContact({
@@ -63,6 +86,7 @@ export const createContactCtrl = async (req, res) => {
     isFavourite,
     contactType,
     userId: req.user._id,
+    photo,
   });
 
   res.status(201).send({
@@ -91,14 +115,6 @@ export const replaceContactCtrl = async (req, res) => {
   const { id } = req.params;
   const { name, phoneNumber, email, isFavourite, contactType } = req.body;
 
-  const contact = {
-    name,
-    phoneNumber,
-    email,
-    isFavourite,
-    contactType,
-  };
-
   const existingContact = await getContactById(id);
   if (!existingContact) {
     throw new createHttpError.NotFound('Contact not found');
@@ -107,7 +123,39 @@ export const replaceContactCtrl = async (req, res) => {
     throw new createHttpError.NotFound('Contact not found');
   }
 
-  const result = await replaceContact(id, contact);
+  let photo = null;
+
+  if (typeof req.file !== 'undefined') {
+    if (env('ENABLE_CLOUDINARY') === 'true') {
+      const result = await uploadToCloudinary(req.file.path);
+      await fs.unlink(req.file.path);
+
+      photo = result.secure_url;
+    } else {
+      await fs.rename(
+        req.file.path,
+        path.resolve('src', 'public', 'photos', req.file.filename),
+      );
+
+      photo = `http://localhost:3000/photo/${req.file.filename}`;
+    }
+  }
+
+  const updatedContact = {
+    name,
+    phoneNumber,
+    email,
+    isFavourite,
+    contactType,
+  };
+
+  if (photo) {
+    updatedContact.photo = photo;
+  } else {
+    updatedContact.photo = existingContact.photo;
+  }
+
+  const result = await replaceContact(id, updatedContact);
   if (!result) {
     throw new createHttpError.NotFound('Contact not found');
   }
@@ -127,6 +175,26 @@ export const updateContactCtrl = async (req, res) => {
   }
   if (existingContact.userId.toString() !== req.user._id.toString()) {
     throw new createHttpError.NotFound('Contact not found');
+  }
+
+  let photo = null;
+
+  if (typeof req.file !== 'undefined') {
+    if (env('ENABLE_CLOUDINARY') === 'true') {
+      const result = await uploadToCloudinary(req.file.path);
+      await fs.unlink(req.file.path);
+      photo = result.secure_url;
+    } else {
+      await fs.rename(
+        req.file.path,
+        path.resolve('src', 'public', 'photos', req.file.filename),
+      );
+      photo = `http://localhost:3000/photo/${req.file.filename}`;
+    }
+  }
+
+  if (photo) {
+    contact.photo = photo;
   }
 
   const result = await updateContact(id, contact);
