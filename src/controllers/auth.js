@@ -1,3 +1,5 @@
+import { THIRTY_DAYS } from '../constants/index.js';
+
 import {
   registerUser,
   loginUser,
@@ -5,8 +7,10 @@ import {
   refreshUsersSession,
   requestResetPassword,
   resetPassword,
+  loginOrRegister,
 } from '../services/auth.js';
-import { THIRTY_DAYS } from '../constants/index.js';
+
+import { generateOAuthURL, validateCode } from '../utils/googleOAuth2.js';
 
 export const registerUserCtrl = async (req, res) => {
   const user = await registerUser(req.body);
@@ -99,5 +103,32 @@ export const resetPasswordCtrl = async (req, res) => {
     status: 200,
     message: 'Password has been successfully reset.',
     data: {},
+  });
+};
+
+export const getOAuthURLCtrl = async (req, res) => {
+  const url = generateOAuthURL();
+
+  res.send({
+    status: 200,
+    message: 'ok',
+    data: url,
+  });
+};
+
+export const confirmOAuthCtrl = async (req, res) => {
+  const { code } = req.body;
+
+  const ticket = await validateCode(code);
+  const session = await loginOrRegister(ticket.payload);
+
+  setupSession(res, session);
+
+  res.send({
+    status: 200,
+    message: 'ok',
+    data: {
+      accessToken: session.accessToken,
+    },
   });
 };

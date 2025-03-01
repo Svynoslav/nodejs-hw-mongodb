@@ -1,0 +1,41 @@
+type: object
+required:
+  - name
+  - phoneNumber
+  - contactType
+properties:
+  name:
+    description: "Contact's name"
+    type: string
+    minLength: 3
+    maxLength: 20
+    example: 'John Doe'
+  phoneNumber:
+    description: "Contact's phone number"
+    type: string
+    minLength: 3
+    maxLength: 20
+    example: '+1234567890'
+  email:
+    description: "Contact's email"
+    type: string
+    minLength: 3
+    maxLength: 20
+    example: 'johndoe@gmail.com'
+  isFavourite:
+    description: 'Whether the contact is marked as favourite'
+    type: boolean
+    example: false
+    default: false
+  contactType:
+    description: 'Type of contact'
+    type: string
+    minLength: 3
+    maxLength: 20
+    enum: ['work', 'home', 'personal']
+    example: 'personal'
+    default: 'personal'
+  photo:
+    description: "Contact's photo"
+    type: string
+    format: binary

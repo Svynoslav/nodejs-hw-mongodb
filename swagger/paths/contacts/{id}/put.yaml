@@ -1,0 +1,41 @@
+tags:
+  - Contacts
+summary: Replace a contact
+operationId: replaceContact
+description: Replace an existing contact with new data
+security:
+  - bearerAuth: []
+parameters:
+  - in: path
+    name: id
+    required: true
+    schema:
+      type: string
+      example: 67c30096ef03244e12baa2cd
+requestBody:
+  content:
+    multipart/form-data:
+      schema:
+        $ref: ../../../components/schemas/createContact.yaml
+responses:
+  '200':
+    description: Successfully replaced a contact
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            status:
+              type: integer
+              example: 200
+            message:
+              type: string
+              example: Contact upserted
+            data:
+              $ref: '../../../components/schemas/contact.yaml'
+  '401':
+    $ref: '../../../components/responses/401.yaml'
+  '404':
+    description: Contact not found
+  '500':
+    $ref: '../../../components/responses/500.yaml'

@@ -156,3 +156,38 @@ export const resetPassword = async (newPwd, token) => {
     throw createHttpError(500, 'Internal server error');
   }
 };
+
+export const loginOrRegister = async (payload) => {
+  const user = await UsersCollection.findOne({ email: payload.email });
+
+  if (user === null) {
+    const password = await bcrypt.hash(
+      crypto.randomBytes(30).toString('base64'),
+      10,
+    );
+
+    const createdUser = await UsersCollection.create({
+      name: payload.name,
+      email: payload.email,
+      password,
+    });
+
+    return await SessionsCollection.create({
+      userId: createdUser._id,
+      accessToken: crypto.randomBytes(30).toString('base64'),
+      refreshToken: crypto.randomBytes(30).toString('base64'),
+      accessTokenValidUntil: new Date(Date.now() + FIFTEEN_MINUTES),
+      refreshTokenValidUntil: new Date(Date.now() + THIRTY_DAYS),
+    });
+  }
+
+  await SessionsCollection.deleteOne({ userId: user._id });
+
+  return await SessionsCollection.create({
+    userId: user._id,
+    accessToken: crypto.randomBytes(30).toString('base64'),
+    refreshToken: crypto.randomBytes(30).toString('base64'),
+    accessTokenValidUntil: new Date(Date.now() + FIFTEEN_MINUTES),
+    refreshTokenValidUntil: new Date(Date.now() + THIRTY_DAYS),
+  });
+};
